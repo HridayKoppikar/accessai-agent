@@ -18,8 +18,11 @@ from fastapi import FastAPI
 from google.adk.cli.fast_api import get_fast_api_app
 from google.cloud import logging as google_cloud_logging
 
+from fastapi.middleware.cors import CORSMiddleware
+
 from app.app_utils.telemetry import setup_telemetry
 from app.app_utils.typing import Feedback
+from app.main import router as camera_router
 
 setup_telemetry()
 _, project_id = google.auth.default()
@@ -46,9 +49,19 @@ app: FastAPI = get_fast_api_app(
     session_service_uri=session_service_uri,
     otel_to_cloud=True,
 )
-app.title = "accessai-agent"
-app.description = "API for interacting with the Agent accessai-agent"
 
+app.title = "accessai-agent"
+app.description = "AccessAI Agent and Camera Demo"
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allow_origins or ["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+for route in reversed(camera_router.routes):
+    app.router.routes.insert(0, route)
 
 @app.post("/feedback")
 def collect_feedback(feedback: Feedback) -> dict[str, str]:
@@ -63,9 +76,25 @@ def collect_feedback(feedback: Feedback) -> dict[str, str]:
     logger.log_struct(feedback.model_dump(), severity="INFO")
     return {"status": "success"}
 
+# =============================================================================
+# Error Handler
+# =============================================================================
+
+@app.exception_handler(Exception)
+async def general_exception_handler(request, exc):
+    """Handle uncaught exceptions."""
+    return JSONResponse(
+        status_code=500,
+        content={
+            "error": "Internal server error",
+            "message": str(exc),
+            "timestamp": datetime.now().isoformat()
+        }
+    )
+
 
 # Main execution
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=int(os.environ.get("PORT", 8080)))

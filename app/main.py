@@ -9,7 +9,7 @@ Then open: http://localhost:8080
 import os
 import sys
 import base64
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pathlib import Path
@@ -25,27 +25,36 @@ from utils.secrets import get_secret, check_secrets_health
 from skills.transcription_skill import text_to_speech, speech_to_text, sign_language_narrator_skill
 from mcp.vision_server import analyze_image
 
-app = FastAPI(title="AccessAI Camera Server", version="0.1.0")
-
-# Enable CORS for development
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # Paths
 BASE_DIR = Path(__file__).parent
 FRONTEND_DIR = BASE_DIR / "frontend"
+
+router = APIRouter()
+
+# adk_app = get_fast_api_app(
+#     agents_dir=AGENT_DIR,
+#     allow_origins=["*"],
+#     web=True,
+# )
+
+# app = FastAPI(title="AccessAI", version="0.1.0")
+# app.mount("/agent", adk_app)
+
+# # Enable CORS for development
+# app.add_middleware(
+#     CORSMiddleware,
+#     allow_origins=["*"],
+#     allow_credentials=True,
+#     allow_methods=["*"],
+#     allow_headers=["*"],
+# )
 
 
 # =============================================================================
 # Health Check & Status
 # =============================================================================
 
-@app.get("/health")
+@router.get("/health")
 async def health_check():
     """Health check endpoint for Cloud Run and local development."""
     # Check secrets health
@@ -83,7 +92,7 @@ async def health_check():
     }
 
 
-@app.get("/")
+@router.get("/camera")
 async def root():
     """Serve the camera frontend."""
     camera_html = FRONTEND_DIR / "camera.html"
@@ -123,7 +132,7 @@ async def root():
 # Image Analysis API
 # =============================================================================
 
-@app.post("/api/analyze-image")
+@router.post("/api/analyze-image")
 async def analyze_image_endpoint(data: dict):
     """Analyze a captured image using Vertex AI Vision."""
     try:
@@ -181,7 +190,7 @@ async def analyze_image_endpoint(data: dict):
 from app.router import handle_request, chat_with_accessai, do_emergency, do_navigation
 
 
-@app.post("/api/chat")
+@router.post("/api/chat")
 async def chat_endpoint(data: dict):
     """
     Main conversational endpoint for AccessAI.
@@ -216,7 +225,7 @@ async def chat_endpoint(data: dict):
 # Emergency & Navigation API
 # =============================================================================
 
-@app.post("/api/emergency")
+@router.post("/api/emergency")
 async def emergency_endpoint(data: dict):
     """Trigger an emergency alert with user situation and optional location."""
     try:
@@ -238,7 +247,7 @@ async def emergency_endpoint(data: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/navigation")
+@router.post("/api/navigation")
 async def navigation_endpoint(data: dict):
     """Get turn-by-turn directions with accessibility considerations."""
     try:
@@ -265,7 +274,7 @@ async def navigation_endpoint(data: dict):
 # Accessibility Features API
 # =============================================================================
 
-@app.post("/api/transcribe-text-to-speech")
+@router.post("/api/transcribe-text-to-speech")
 async def text_to_speech_endpoint(data: dict):
     """Convert text to speech audio for visually impaired users."""
     try:
@@ -292,7 +301,7 @@ async def text_to_speech_endpoint(data: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/transcribe-speech-to-text")
+@router.post("/api/transcribe-speech-to-text")
 async def speech_to_text_endpoint(data: dict):
     """Convert speech audio to text for hearing impaired users."""
     try:
@@ -314,7 +323,7 @@ async def speech_to_text_endpoint(data: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@app.post("/api/detect-sign-language")
+@router.post("/api/detect-sign-language")
 async def sign_language_detection_endpoint(data: dict):
     """Detect sign language gestures and output text."""
     try:
@@ -336,51 +345,35 @@ async def sign_language_detection_endpoint(data: dict):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# =============================================================================
-# Error Handlers
-# =============================================================================
 
-@app.exception_handler(Exception)
-async def general_exception_handler(request, exc):
-    """Handle uncaught exceptions."""
-    return JSONResponse(
-        status_code=500,
-        content={
-            "error": "Internal server error",
-            "message": str(exc),
-            "timestamp": datetime.now().isoformat()
-        }
-    )
+# if __name__ == "__main__":
+#     import uvicorn
 
+#     # Check secrets on startup
+#     secrets_health = check_secrets_health()
 
-if __name__ == "__main__":
-    import uvicorn
+#     print("\n" + "="*60)
+#     print(" 🦾 AccessAI Camera Server")
+#     print("="*60)
+#     print(f"\n  Opening at: http://localhost:8080")
+#     print(f"  Camera page: http://localhost:8080")
+#     print(f"  API endpoint: http://localhost:8080/api/analyze-image")
+#     print(f"  Health check: http://localhost:8080/health")
+#     print(f"\n  Secrets Status:")
+#     print(f"    • All configured: {'✓ Yes' if secrets_health['all_ready'] else '✗ No'}")
+#     if secrets_health['missing_secrets']:
+#         print(f"    • Missing: {', '.join(secrets_health['missing_secrets'])}")
+#     print(f"\n  Features:")
+#     print(f"    • Vision AI: {'✓' if get_secret('GOOGLE_CLOUD_PROJECT') else '✗ (configure GOOGLE_CLOUD_PROJECT)'}")
+#     print(f"    • Google Maps: {'✓' if get_secret('GOOGLE_MAPS_API_KEY') else '✗ (configure GOOGLE_MAPS_API_KEY)'}")
+#     print(f"    • Transcription: ✓ (skills available)")
+#     print(f"\n  Press Ctrl+C to stop")
+#     print("="*60 + "\n")
 
-    # Check secrets on startup
-    secrets_health = check_secrets_health()
-
-    print("\n" + "="*60)
-    print(" 🦾 AccessAI Camera Server")
-    print("="*60)
-    print(f"\n  Opening at: http://localhost:8080")
-    print(f"  Camera page: http://localhost:8080")
-    print(f"  API endpoint: http://localhost:8080/api/analyze-image")
-    print(f"  Health check: http://localhost:8080/health")
-    print(f"\n  Secrets Status:")
-    print(f"    • All configured: {'✓ Yes' if secrets_health['all_ready'] else '✗ No'}")
-    if secrets_health['missing_secrets']:
-        print(f"    • Missing: {', '.join(secrets_health['missing_secrets'])}")
-    print(f"\n  Features:")
-    print(f"    • Vision AI: {'✓' if get_secret('GOOGLE_CLOUD_PROJECT') else '✗ (configure GOOGLE_CLOUD_PROJECT)'}")
-    print(f"    • Google Maps: {'✓' if get_secret('GOOGLE_MAPS_API_KEY') else '✗ (configure GOOGLE_MAPS_API_KEY)'}")
-    print(f"    • Transcription: ✓ (skills available)")
-    print(f"\n  Press Ctrl+C to stop")
-    print("="*60 + "\n")
-
-    uvicorn.run(
-        "app.main:app",
-        host="0.0.0.0",
-        port=8080,
-        reload=True,
-        log_level="info"
-    )
+#     uvicorn.run(
+#         "app.main:app",
+#         host="0.0.0.0",
+#         port=int(os.environ.get("PORT", 8080)),
+#         #reload=True,
+#         log_level="info"
+#     )
