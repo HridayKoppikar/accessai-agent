@@ -207,15 +207,9 @@ Required GCP Secrets:
 ### Running Locally
 
 ```bash
-# Option 1: Run the FastAPI server with camera feed support
-uv run python -m app.main
-
-# Option 2: Run the ADK agent playground
-agents-cli playground
-
-# Option 3: Using Docker
-docker-compose up --build
+uv run uvicorn app.fast_api_app:app --host 0.0.0.0 --port 8080 --reload
 ```
+You can access the dev UI from localhost:8080/ and the camera demo from localhost:8080/camera.
 
 ---
 
