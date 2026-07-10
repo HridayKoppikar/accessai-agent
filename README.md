@@ -6,6 +6,8 @@ A 24/7 personal accessibility assistant for visually and hearing impaired users,
 
 ---
 
+For judges: [Quick Start](#quick-start)
+
 ## Overview
 
 AccessAI is a multi-agent system that provides real-time environmental awareness, navigation assistance, health management, and emergency support for people with disabilities. The agent processes visual input, monitors safety, manages health data securely, and provides an empathetic conversational interface.
