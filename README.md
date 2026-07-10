@@ -6,7 +6,7 @@ A 24/7 personal accessibility assistant for visually and hearing impaired users,
 
 ---
 
-## For judges
+## For Judges
 [Quick Start](#quick-start) (to run locally)
 
 **Cloud Run Deployment**
