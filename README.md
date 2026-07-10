@@ -8,8 +8,11 @@ A 24/7 personal accessibility assistant for visually and hearing impaired users,
 
 ## For judges
 [Quick Start](#quick-start) (to run locally)
-Cloud Run Deployment:
+
+**Cloud Run Deployment**
+
 Agent Dev UI: https://accessai-124930446189.asia-south1.run.app/
+
 Demo Camera App: https://accessai-124930446189.asia-south1.run.app/camera
 
 ## Overview
