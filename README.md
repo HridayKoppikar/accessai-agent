@@ -205,11 +205,19 @@ Required GCP Secrets:
 - `GOOGLE_MAPS_API_KEY` - (Optional) For real navigation features
 
 ### Running Locally
-
 ```bash
+# Option 1: Run the FastAPI server with camera feed support
 uv run uvicorn app.fast_api_app:app --host 0.0.0.0 --port 8080 --reload
+# You can access the dev UI from localhost:8080/ and the camera demo from localhost:8080/camera
+
+# Option 2: Run the ADK agent playground
+adk web
+# or
+agents-cli playground # This was causing some issues for me
+
+# Option 3: Using Docker
+docker-compose up --build
 ```
-You can access the dev UI from localhost:8080/ and the camera demo from localhost:8080/camera.
 
 ---
 
